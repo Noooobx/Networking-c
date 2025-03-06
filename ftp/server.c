@@ -5,7 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-#define PORT 5555
+#define PORT 5557
 #define MAX_BUFFER 1024
 #define FILE_STORAGE_DIR "./" // Directory where files are stored
 
@@ -39,9 +39,9 @@ void handle_client(int client_sockfd) {
             FILE *file = fopen(filename, "rb");
             if (file == NULL) {
                 snprintf(response, sizeof(response), "550 File not found\r\n");
-                send(client_sockfd, response, strlen(response), 0);
+                send(client_sockfd, response, strlen(response), 0);  // Send the error message
             } else {
-                // Read and send the file content
+                // Read and send the file content only if the file is found
                 while (1) {
                     int bytes_read = fread(buffer, 1, sizeof(buffer), file);
                     if (bytes_read > 0) {
@@ -52,11 +52,12 @@ void handle_client(int client_sockfd) {
                     }
                 }
                 fclose(file);
-
+            
                 // Send response after file transfer
                 snprintf(response, sizeof(response), "226 Transfer complete\r\n");
                 send(client_sockfd, response, strlen(response), 0);
             }
+            
         } 
         // Handle invalid or unsupported commands
         else {
