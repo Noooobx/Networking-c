@@ -1,37 +1,26 @@
 #include <stdio.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
-main()
+
+int main()
 {
+
     struct sockaddr_in server;
-    int lfd;
-    char rBuf[100] = "", sBuf[100] = "";
-    lfd = socket(AF_INET, SOCK_STREAM, 0);
+
     server.sin_family = AF_INET;
     server.sin_port = 2000;
     server.sin_addr.s_addr = inet_addr("127.0.0.1");
-    printf("\nClient ready....\n");
+
+    int lfd = socket(AF_INET, SOCK_STREAM, 0);
     connect(lfd, (struct sockaddr *)&server, sizeof server);
 
-    while (1)
-    {
-        printf("\nClient:");
-        gets(sBuf);
-        
-        send(lfd, sBuf, sizeof sBuf, 0);
-        if(strcmp(sBuf,"E") == 0){
-            break;
-        }
+    char sBuf[100];
+    printf("Client : \n");
+    fgets(sBuf, sizeof sBuf, stdin);
+    send(lfd, sBuf, sizeof sBuf, 0);
 
-        recv(lfd, rBuf, sizeof rBuf, 0);
+    char rBuf[100];
+    recv(lfd, rBuf, sizeof rBuf, 0);
+    printf("Server: %s",rBuf);
 
-        printf("\nServer:%s", rBuf);
-        printf("\n");
-    }
-
-    close(lfd);
+    return 0;
 }
