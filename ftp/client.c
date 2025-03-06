@@ -54,16 +54,28 @@ int main(int argc, char *argv[]) {
             snprintf(buffer, sizeof(buffer), "get %s", filename);
             send(sockfd, buffer, strlen(buffer), 0);
 
-            // Receive the file or error message from the server
-            while ((bytes_received = recv(sockfd, buffer, sizeof(buffer), 0)) > 0) {
-                // Write received data to a local file
-                FILE *file = fopen(filename, "wb");
-                if (file != NULL) {
-                    fwrite(buffer, 1, bytes_received, file);
-                    fclose(file);
-                    printf("FILE %s RECEIVED FROM SERVER\n", filename);
+            // Receive the server's response
+            bytes_received = recv(sockfd, buffer, sizeof(buffer), 0);
+
+            // Check if we received an error message or file data
+            if (bytes_received > 0) {
+                // Check if the message contains an error like "550 File not found"
+                if (strncmp(buffer, "550", 3) == 0) {
+                    // Server returned an error message, handle it
+                    printf("Error: File not found on the server.\n");
+                } else if (strncmp(buffer, "226", 3) == 0) {
+                    // Transfer completed successfully, no file data received
+                    printf("Transfer complete, but no file data was received.\n");
                 } else {
-                    printf("Error opening file to write\n");
+                    // We received actual file data, write it to the local file
+                    FILE *file = fopen(filename, "wb");
+                    if (file != NULL) {
+                        fwrite(buffer, 1, bytes_received, file);
+                        fclose(file);
+                        printf("FILE %s RECEIVED FROM SERVER\n", filename);
+                    } else {
+                        printf("Error opening file to write\n");
+                    }
                 }
             }
         }
