@@ -9,7 +9,7 @@ int main()
 
     server.sin_family = AF_INET;
     server.sin_port = 2000;
-    server.sin_addr.s_addr = inet_addr("127.0.0.1");
+    server.sin_addr.s_addr = INADDR_ANY;  // Accept connections from any interface
 
     int lfd = socket(AF_INET, SOCK_STREAM, 0);
     bind(lfd, (struct sockaddr *)&server,sizeof server);
