@@ -1,46 +1,94 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
 #include <arpa/inet.h>
-#define port 4330
+#include <sys/socket.h>
 
-int main(){
+#define MAX_BUFFER 1024
 
-    // TCP socket.
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
-    struct sockaddr_in server;
-    server.sin_addr.s_addr = htonl(INADDR_ANY);
-    server.sin_port = htons(port);
-    server.sin_family = AF_INET;
-    int len = sizeof(server);
-
-    int con_status = connect(sockfd, (struct sockaddr*)&server, len);
-
-    if(con_status<0){
-        perror("coneenciton failed");
-        exit(0);
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        printf("Usage: %s <server_ip> <port>\n", argv[0]);
+        exit(1);
     }
 
-    char filename[512];
+    // Get server IP and port from command line arguments
+    char *server_ip = argv[1];
+    int port = atoi(argv[2]);
 
-    // Sets the enitire array to 0.
-    bzero(filename,512);
-    printf("Enter the file name :");
+    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("Error creating socket");
+        exit(1);
+    }
 
-    scanf("%s",filename);
+    // Set up server address
+    struct sockaddr_in server;
+    server.sin_family = AF_INET;
+    server.sin_port = htons(port);
+    server.sin_addr.s_addr = inet_addr(server_ip);
 
-    // Send filename and lenght of the array to the server.
-    send(sockfd, filename, strlen(filename), 0);
+    // Connect to FTP server
+    if (connect(sockfd, (struct sockaddr*)&server, sizeof(server)) < 0) {
+        perror("Connection failed");
+        close(sockfd);
+        exit(1);
+    }
 
-    char output[2048];
-    // Sets the enitire array to 0.
-    bzero(output, 2048);
+    char command[MAX_BUFFER];
+    char filename[MAX_BUFFER];
+    char buffer[MAX_BUFFER];
+    int bytes_received;
 
-    recv(sockfd, output, 2048, 0);
-    printf("\n\n------File Content------\n\n%s\n\n------File Content------\n\n",output);
-    close(sockfd);
+    // Get user input for commands
+    while (1) {
+        printf("Enter command: ");
+        scanf("%s", command);
+
+        if (strcmp(command, "get") == 0) {
+            printf("Enter filename: ");
+            scanf("%s", filename);
+
+            // Send 'get' command to the server
+            snprintf(buffer, sizeof(buffer), "get %s", filename);
+            send(sockfd, buffer, strlen(buffer), 0);
+
+            // Receive the server's response
+            bytes_received = recv(sockfd, buffer, sizeof(buffer), 0);
+
+            // Check if we received an error message or file data
+            if (bytes_received > 0) {
+                // Check if the message contains an error like "550 File not found"
+                if (strncmp(buffer, "550", 3) == 0) {
+                    // Server returned an error message, handle it
+                    printf("Error: File not found on the server.\n");
+                } else if (strncmp(buffer, "226", 3) == 0) {
+                    // Transfer completed successfully, no file data received
+                    printf("Transfer complete, but no file data was received.\n");
+                } else {
+                    // We received actual file data, write it to the local file
+                    FILE *file = fopen(filename, "wb");
+                    if (file != NULL) {
+                        fwrite(buffer, 1, bytes_received, file);
+                        fclose(file);
+                        printf("FILE %s RECEIVED FROM SERVER\n", filename);
+                    } else {
+                        printf("Error opening file to write\n");
+                    }
+                }
+            }
+        }
+        else if (strcmp(command, "close") == 0) {
+            // Close the connection
+            close(sockfd);
+            printf("Connection closed\n");
+            break;
+        }
+        else {
+            printf("Invalid command!\n");
+        }
+    }
 
     return 0;
 }
