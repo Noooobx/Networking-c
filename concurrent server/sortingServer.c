@@ -1,6 +1,5 @@
 
 // TCP Multi Chat : Server
-
 #include<stdio.h>
 #include<string.h>
 #include<sys/stat.h>
@@ -37,9 +36,10 @@ int main()
         int size;
         int numbers[10];
     } d;
+
     int lfd,n,confd;
     char rBuf[100],sBuf[100],choice;
-    pid_t childpid;	//
+    pid_t childpid;	
     
     lfd=socket(AF_INET,SOCK_STREAM,0); 
     server.sin_family=AF_INET;
@@ -64,9 +64,6 @@ int main()
                  for(int i = 0 ;i < d.size; i++){
                     printf("%d ",d.numbers[i]);
                  }
-                //  if(d.size == 2){
-                //     break;
-                //  }
                  bubbleSort(d.numbers, d.size);
 
                  printf("\nSorted array sent to client succesfully.....\n");

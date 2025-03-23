@@ -39,18 +39,9 @@ int main()
 
         send(lfd,&d,sizeof d,0);
 
-
-
-		// memset(rBuf, 0, sizeof rBuf); 
-		// memset(sBuf, 0, sizeof sBuf);
-
-		//  printf("\nClient :" );
-		  //fgets(sBuf,sizeof sBuf,stdin);
-		  //send(lfd,sBuf,sizeof sBuf,0);
-
 		 recv(lfd,&d,sizeof d,0);
 
-         printf("\n Array received from server.....\n");
+         printf("\nArray received from server.....\n");
          for(int i = 0 ;i < d.size; i++){
             printf("%d ",d.numbers[i]);
          }
